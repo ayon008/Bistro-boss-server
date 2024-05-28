@@ -1,4 +1,3 @@
-const express = require('express');
 require('dotenv').config();
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -7,26 +6,22 @@ const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
-
+const express = require('express');
 const cors = require('cors');
-const corsOptions = {
-    origin: 'http://localhost:5173',
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
-    credentials: true
-};
 const app = express();
 const port = process.env.PORT || 5000;
 
+const corsOptions = {
+    origin: 'http://localhost:5173/', // Allow requests from a specific origin
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // Allow only specific HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow only specific headers
+};
 
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static("public"));
-
-
 
 const client = new MongoClient(uri, {
     serverApi: {
