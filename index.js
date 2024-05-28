@@ -5,12 +5,20 @@ const axios = require('axios');
 const stripe = require('stripe')('sk_test_51PBVoLRpKZBTemtI25rA4u0oKiW9Uz2kaZWqZGhQCRjP2bqzdZpa7neCPUBKDQxz46zY3LXMy1YDAVTrEx1RsZHc00GMFIQ37w');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
-console.log(RECAPTCHA_SECRET_KEY);
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+
 
 const client = new MongoClient(uri, {
     serverApi: {
@@ -19,12 +27,6 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(express.static("public"));
 
 // Routes
 app.get('/', (req, res) => {
