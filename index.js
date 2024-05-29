@@ -1,24 +1,19 @@
 require('dotenv').config();
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const stripe = require('stripe')('sk_test_51PBVoLRpKZBTemtI25rA4u0oKiW9Uz2kaZWqZGhQCRjP2bqzdZpa7neCPUBKDQxz46zY3LXMy1YDAVTrEx1RsZHc00GMFIQ37w');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const port = process.env.PORT || 5000;
 
-const corsOptions = {
-    origin: 'http://localhost:5173/', // Allow requests from a specific origin
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // Allow only specific HTTP methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allow only specific headers
-};
 
 // Middleware
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -35,10 +30,6 @@ const client = new MongoClient(uri, {
 app.get('/', (req, res) => {
     res.send('Server is running');
 });
-
-
-// sk_test_51PBVoLRpKZBTemtI25rA4u0oKiW9Uz2kaZWqZGhQCRjP2bqzdZpa7neCPUBKDQxz46zY3LXMy1YDAVTrEx1RsZHc00GMFIQ37w
-
 
 // JWT Verification Middleware
 const verifyToken = (req, res, next) => {
@@ -58,6 +49,7 @@ const verifyToken = (req, res, next) => {
 
 async function run() {
     try {
+        await client.connect();
         const database = client.db('BistroBoss');
         const menuCollection = database.collection('menu');
         const reviewCollection = database.collection('reviews');
@@ -75,13 +67,13 @@ async function run() {
 
         const verifyAdmin = async (req, res, next) => {
             const adminEmail = req.decoded.email;
-            const query = { email: { $eq: adminEmail } }
+            const query = { email: adminEmail };
             const findAdmin = await usersCollection.findOne(query);
             if (findAdmin.role !== 'admin') {
-                return res.status(403).send({ error: true, message: 'unauthorized access' })
+                return res.status(403).send({ error: true, message: 'Unauthorized access' });
             }
             next();
-        }
+        };
 
         app.get('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
@@ -105,22 +97,22 @@ async function run() {
 
         app.get('/menu/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: id };
+            const query = { _id: new ObjectId(id) };
             const find = await menuCollection.findOne(query);
             res.send(find);
-        })
+        });
 
-        app.get('/menu:category', async (req, res) => {
+        app.get('/menu/category/:category', async (req, res) => {
             const category = req.params.category;
             const limit = parseInt(req.query.limit);
-            const query = { category: { $eq: category } };
+            const query = { category };
             const result = await menuCollection.find(query).limit(limit).toArray();
             res.send(result);
         });
 
         app.get('/menu/length/:category', async (req, res) => {
             const category = req.params.category;
-            const query = { category: { $eq: category } };
+            const query = { category };
             const items = await menuCollection.countDocuments(query);
             res.send({ items });
         });
@@ -142,15 +134,12 @@ async function run() {
             if (req.decoded.email !== email) {
                 return res.status(401).send({ message: 'Invalid authorization' });
             }
-            const query = { email: { $eq: email } };
+            const query = { email };
             const result = await bookingsCollection.find(query).toArray();
-            console.log(result);
             res.send(result);
         });
 
         // User Endpoints
-
-
         app.post('/contactus', async (req, res) => {
             const { name, email, phone, message, captchaToken } = req.body;
             if (!captchaToken) {
@@ -159,13 +148,10 @@ async function run() {
 
             const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${captchaToken}`;
             try {
-                console.log('clicked');
                 const response = await axios.post(verificationUrl);
                 const data = response.data;
-                console.log(data);
                 if (data.success) {
                     const result = await mailBox.insertOne({ name, email, phone, message });
-                    console.log('clicked');
                     return res.send({ message: 'reCAPTCHA verified successfully', result });
                 } else {
                     return res.status(400).send({ message: 'reCAPTCHA verification failed', errors: data['error-codes'] });
@@ -216,7 +202,6 @@ async function run() {
             res.send(result);
         });
 
-
         app.delete('/order/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -232,18 +217,16 @@ async function run() {
         });
 
         app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
-            console.log('clicked');
             const id = req.params.id;
-            const query = { _id: id }
+            const query = { _id: new ObjectId(id) };
             const result = await menuCollection.deleteOne(query);
             res.send(result);
-        })
+        });
 
         app.patch('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
-            console.log('clicked');
             const item = req.body;
             const id = req.params.id;
-            const filter = { _id: id }
+            const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
                     name: item.recipeName,
@@ -251,58 +234,52 @@ async function run() {
                     price: item.price,
                     recipe: item.details,
                 }
-            }
-            const result = await menuCollection.updateOne(filter, updatedDoc)
-            res.send(result)
-        })
+            };
+            const result = await menuCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
 
         app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
             const data = req.body;
-            const result = await menuCollection.insertOne(data)
+            const result = await menuCollection.insertOne(data);
             res.send(result);
-        })
+        });
 
         app.get('/user', async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
-        })
+        });
 
         app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            console.log('clicked');
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
                     role: 'admin'
                 }
-            }
+            };
             const result = await usersCollection.updateOne(filter, updatedDoc);
             res.send(result);
-        })
+        });
+
         app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) }
+            const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
-        })
+        });
 
         app.get('/allBookings', verifyToken, verifyAdmin, async (req, res) => {
-            const result = await bookingsCollection.find().toArray()
+            const result = await bookingsCollection.find().toArray();
             res.send(result);
-        })
-
+        });
 
         app.post("/create-payment-intent", verifyToken, async (req, res) => {
             const { price } = req.body;
-            console.log(price);
-            // Create a PaymentIntent with the order amount and currency
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: price * 100,
                 currency: "usd",
-                // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-                payment_method_types: [
-                    'card',
-                ]
+                payment_method_types: ['card']
             });
 
             res.send({
@@ -312,55 +289,41 @@ async function run() {
 
         app.post('/payments', verifyToken, async (req, res) => {
             const data = req.body;
-            const query = { _id: { $in: data?.cartIds.map(id => new ObjectId(id)) } }
+            const query = { _id: { $in: data.cartIds.map(id => new ObjectId(id)) } };
             const insertedData = await paymentCollection.insertOne(data);
             const result = await ordersCollection.deleteMany(query);
             res.send(insertedData);
-        })
+        });
 
         app.get('/payments', verifyToken, async (req, res) => {
             const email = req.query.email;
-            console.log(email);
-            const query = { email: { $eq: email } };
+            const query = { email };
             const find = await paymentCollection.find(query).toArray();
-            res.send(find)
-        })
+            res.send(find);
+        });
 
         app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
-            const users = await userCollection.estimatedDocumentCount();
+            const users = await usersCollection.estimatedDocumentCount();
             const menuItems = await menuCollection.estimatedDocumentCount();
             const orders = await paymentCollection.estimatedDocumentCount();
-
-            // this is not the best way
-            // const payments = await paymentCollection.find().toArray();
-            // const revenue = payments.reduce((total, payment) => total + payment.price, 0);
 
             const result = await paymentCollection.aggregate([
                 {
                     $group: {
                         _id: null,
-                        totalRevenue: {
-                            $sum: '$price'
-                        }
+                        totalRevenue: { $sum: '$price' }
                     }
                 }
             ]).toArray();
 
             const revenue = result.length > 0 ? result[0].totalRevenue : 0;
 
-            res.send({
-                users,
-                menuItems,
-                orders,
-                revenue
-            })
-        })
+            res.send({ users, menuItems, orders, revenue });
+        });
 
         app.get('/order-stats', verifyToken, verifyAdmin, async (req, res) => {
             const result = await paymentCollection.aggregate([
-                {
-                    $unwind: '$menuItemIds'
-                },
+                { $unwind: '$menuItemIds' },
                 {
                     $lookup: {
                         from: 'menu',
@@ -369,9 +332,7 @@ async function run() {
                         as: 'menuItems'
                     }
                 },
-                {
-                    $unwind: '$menuItems'
-                },
+                { $unwind: '$menuItems' },
                 {
                     $group: {
                         _id: '$menuItems.category',
@@ -390,13 +351,13 @@ async function run() {
             ]).toArray();
 
             res.send(result);
-
-        })
+        });
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
-
+        // Ensuring the client will close when you finish/error
+        // await client.close();
     }
 }
 
