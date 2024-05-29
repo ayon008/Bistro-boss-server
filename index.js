@@ -1,7 +1,7 @@
 require('dotenv').config();
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')('sk_test_51PBVoLRpKZBTemtI25rA4u0oKiW9Uz2kaZWqZGhQCRjP2bqzdZpa7neCPUBKDQxz46zY3LXMy1YDAVTrEx1RsZHc00GMFIQ37w');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
