@@ -108,7 +108,7 @@ async function run() {
             res.send(find);
         })
 
-        app.get('/menu/:category', async (req, res) => {
+        app.get('/menu:category', async (req, res) => {
             const category = req.params.category;
             const limit = parseInt(req.query.limit);
             const query = { category: { $eq: category } };
