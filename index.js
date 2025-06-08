@@ -4,20 +4,40 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const stripe = require('stripe')('sk_test_51PBVoLRpKZBTemtI25rA4u0oKiW9Uz2kaZWqZGhQCRjP2bqzdZpa7neCPUBKDQxz46zY3LXMy1YDAVTrEx1RsZHc00GMFIQ37w');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
+const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
-const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 5000;
-
 
 app.use(cors());
+
+const allowedOrigins = [
+    'https://janitorialappointment.com',
+    'https://www.janitorialappointment.com'
+]
+
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header("Access-Control-Allow-Origin", origin);
+    }
+
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
+
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static("public"));
-
 
 
 const client = new MongoClient(uri, {
