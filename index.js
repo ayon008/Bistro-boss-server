@@ -11,28 +11,13 @@ const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vgoyzza.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+    origin: 'https://bistro-boss-final-ea0a9.web.app',
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
+    allowedHeaders: ["Content-Type", "Authorization"]
+};
 
-const allowedOrigins = [
-    'https://janitorialappointment.com',
-    'https://www.janitorialappointment.com'
-]
-
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header("Access-Control-Allow-Origin", origin);
-    }
-
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-
-    next();
-});
+app.use(cors(corsOptions));
 
 
 app.use(express.json());
