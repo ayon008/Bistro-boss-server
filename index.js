@@ -13,21 +13,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 
-// Middleware
-const allowedOrigins = [
-    'https://bistro-boss-final-ea0a9.web.app'
-];
-
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true // only if needed
-}));
+app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static("public"));
