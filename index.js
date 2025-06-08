@@ -23,7 +23,7 @@ app.use(express.static("public"));
 
 const allowedOrigins = [
     'https://bistro-boss-final-ea0a9.web.app/',
-    'https://www.bistro-boss-final-ea0a9.web.app/'
+    'https://bistro-boss-final-ea0a9.web.app'
 ];
 
 app.use((req, res, next) => {
