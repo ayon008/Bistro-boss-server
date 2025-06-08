@@ -26,10 +26,8 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true
+    credentials: true // only if needed
 }));
-
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static("public"));
