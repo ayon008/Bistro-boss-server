@@ -14,33 +14,25 @@ const port = process.env.PORT || 5000;
 
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(express.static("public"));
-
-
-
 const allowedOrigins = [
-    'https://bistro-boss-final-ea0a9.web.app/',
     'https://bistro-boss-final-ea0a9.web.app'
 ];
 
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header("Access-Control-Allow-Origin", origin);
-    }
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true
+}));
 
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-
-    next();
-});
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.static("public"));
 
 
 
